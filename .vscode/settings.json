@@ -1,0 +1,22 @@
+{
+    "makefile.configureOnOpen": true,
+    //set the location and flags for testing using vscode
+    "python.testing.pytestArgs": [
+        "-v",
+        "-s",
+        "./src/tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "cSpell.words": [
+        "devcontainer",
+        "Pylint"
+    ]
+    // "python.testing.unittestArgs": [
+    //     "-v",
+    //     "-s",
+    //     ".",
+    //     "-p",
+    //     "*test*.py"
+    // ]
+}
