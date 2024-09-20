@@ -1,11 +1,1 @@
-numpy==2.1
-pandas==2.2.2
-matplotlib==3.9.2
-pytest == 8.3.2
-pylint == 3.2.7 
-black == 24.8.0 
-scikit-learn == 1.5.1
-
-seaborn == 0.13.2
-
-gosdt
+seaborn
