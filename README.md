@@ -1,5 +1,7 @@
 # IDS-706-Workspace
 
+USE: jupyter nbconvert --to html "src/main_workspace/HW 1 q5.ipynb"
+
 [![Docker Image CI](https://github.com/Nathan-Bush46/IDS-706-Workspace/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Nathan-Bush46/IDS-706-Workspace/actions/workflows/docker-image.yml)
 
 ## Set up instructions using VS code + Docker: 

@@ -1,0 +1,335 @@
+\documentclass{exam}
+\usepackage[utf8]{inputenc}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{bm}
+\usepackage{ragged2e}
+\usepackage{hyperref}
+\usepackage{amsthm}
+\usepackage{verbatim}
+\usepackage{amsmath,dsfont,amssymb}
+\usepackage{color}
+\usepackage{bm}
+\usepackage{bbm}
+\usepackage{tikz-qtree}
+\usepackage{forest}
+\usepackage{url}
+\usepackage{enumerate}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{float}
+% Custom definitions
+\def\Pr{\text{Pr}}
+\def\E{\text{E}}
+\def\V{\text{V}}
+\def\R{\mathbb{R}}
+\makeatletter
+\newcommand{\pushright}[1]{\ifmeasuring@#1\else\omit\hfill$\displaystyle#1$\fi\ignorespaces}
+\newcommand{\pushleft}[1]{\ifmeasuring@#1\else\omit$\displaystyle#1$\hfill\fi\ignorespaces}
+\makeatother
+
+
+\def\Rtrue{R^{\text{true}}}
+\def\Imp{\text{Imp}}
+\def\tree{\text{tree}}
+\def\rf{\text{rf}}
+\def\OOB{\text{OOB}}
+\def\T{\mathcal{T}}
+\def\F{\mathcal{F}}
+\def\one{\mathcal{T}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\bw}{\mathbf{w}}
+\DeclareMathOperator{\sign}{sgn}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\corr}{corr}
+
+\newcommand{\One}[1]{ \mathbbm{1}_{\left[#1\right]}}
+\newcommand{\sangle}[1]{\langle #1 \rangle}
+\newcommand{\abs}[1]{\left | #1 \right |}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\usepackage[skip=2pt,it]{caption}
+\title{Homework 2, Machine Learning, Fall 2024}
+\author{ }
+\date{}
+
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={CS 671 HW2 2024},
+    pdfpagemode=FullScreen,
+}
+
+
+\begin{document}
+\maketitle
+\textbf{*IMPORTANT* Homework Submission Instructions}
+\begin{enumerate}
+    \item For all coding components, complete the solutions with a Jupyter notebook/Google Colab, and export the notebook (including both code and outputs) into a PDF file. Concatenate the theory solutions with the coding solutions into \textbf{a single} PDF file which you will submit to Gradescope. 
+    \item All solutions should be typed. 
+    \item Gradescope will prompt you to label the pages for each question. Please do this carefully. 
+    \item You must show work or give an explanation for every question. ``Yes'' and ``No'' are not sufficient answers. Always show the steps of your calculations. Only partial credit can be given if you do not explain your answer.
+    \item Failure to adhere to the above submission format may result in penalties.  
+\end{enumerate}
+
+
+\paragraph{} As a reminder, don’t wait until the last minute to ask for help, because the person you need to speak with might be dealing with many other students close to the deadline. Also, the teaching staff has been instructed that it is not mandatory for them to answer questions on the day the homework is due. So get your questions in early! \\
+
+There is no collaboration on homework. You must do your own work; we feel this is the best way to learn. If you get stuck, you are welcome to discuss conceptual issues with your classmates or the TAs but you may not show your classmates any part of your code or solutions or proof steps on paper. Do not ask another classmate to perform coding for you or to show you the answer to the problem. You can look at reference material on the Internet such as ChatGPT, but don’t look at that unless you are really stuck, and make sure your answer is complete - don’t write “Because I found a theorem that says the answer is X”. You must show your complete work for each question. You are required to state what references you used (if you used an outside source). \textbf{Please copy the following statement at the top of your assignment file}: \\
+
+This assignment represents my own work. I did not work on this assignment with others. All coding was done by myself. \\
+
+\newpage
+
+
+\color{black}
+\section{Optimization, Regularization, and Constraints (Theory) (Hayden) - 24 pts}
+\newcommand{\X}{\mathbf{X}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\y}{\mathbf{y}}
+
+The following problem concerns binary classification optimized over $n$ training samples using a 0-1 loss. We will add regularization and finally add a hard constraint on complexity. For simplicity in this question, we focus on decision trees with regularization on the number of leaves and a hard constraint on depth. 
+\textbf{Please show your work for these questions.} 
+
+\paragraph{(a)}No regularization
+
+Define our 0-1 loss for tree $f$ on training samples $\X$ with training labels $\y$ as $L(f, \X, \y)$: 
+
+\begin{equation} \label{eq:noreg}
+    L(f, \X, \y) = \frac{1}{n}\sum_{i=1}^n \mathbf{1}_{f(\x_i) \neq y_i}
+\end{equation}
+
+where $f(\x_i)$ is the prediction of tree $f$ for the $i^{th}$ training sample, and $n$ is the number of training samples. 
+
+\begin{enumerate}[i.]
+    \item {Why would it be a bad idea to optimize Objective \ref{eq:noreg} as is, without adding sparsity? Give a one sentence answer.}
+    
+    \item For a dataset with $k$ boolean features, what is the deepest valid\footnote{An invalid tree would be one which splits on the same feature multiple times in a single path - so you shouldn't have a tree which splits on feature 1 at the root, then splits on feature 1 again after that. You could still have a tree which splits on feature 1 at the root, then splits on feature 2 in both the left and right children.} tree you can make, as a function of $k$? You could consider this an implicit constraint on the depth of the tree. (Define the depth of the tree as the number of nodes in the longest path from root to leaf - so a tree with just 1 leaf is depth 1).
+    
+    \item For Objective \ref{eq:noreg}, how many valid optimal trees are there for the dataset in Table \ref{tab:noreg}? What are these trees (please describe or draw them)?
+    
+\end{enumerate}
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{cc|c}
+        $\x_{\cdot1}$ & $\x_{\cdot2}$ & $\y$ \\
+        1 & 0 & 1\\
+        0 & 1 & 0 
+    \end{tabular}
+    \caption{A simple dataset for decision tree optimization}
+    \label{tab:noreg}
+\end{table}
+
+\paragraph{(b)}Soft Regularization
+
+Define $s(f)$ as a measure of the sparsity of the tree $f$ (specifically the number of leaves), and adding the regularization penalty $\lambda$, we get the following objective: 
+
+\begin{equation}
+\label{eq:softreg}
+R(f, \X, \y | \lambda) = L(f, \X, \y) + \lambda s(f)
+\end{equation}
+
+Let $L(f, \X, \y)$ remain the 0-1 loss, as in the previous subsection. 
+
+\begin{enumerate}[i]
+    \item Suppose an optimal tree for some dataset happens to have only one leaf. For the worst possible dataset, what is the largest possible value of $R(f, \X, \y | \lambda)$ for this optimal tree? Note that a tree of depth 1 is considered to have 1 leaf.
+
+    \item Find the smallest depth $d$ (as a function of $\lambda$) such that the following claim is true:\\ \textit{For any binary classification dataset $(\X, \y)$, any tree $f$ of depth $d$ or greater is guaranteed to be suboptimal with respect to $R(f, \X, \y | \lambda)$. }\\
+    Define the depth of the tree as the number of nodes in the longest path from root to leaf (so a tree with just 1 leaf is depth 1). Assume $\lambda > 0$.
+
+    \item For the dataset in Table \ref{tab:noreg}, how many optimal trees exist for Objective \ref{eq:softreg} with any $0 <  \lambda < \frac{1}{2}$?
+
+\end{enumerate}
+
+\paragraph{(c)}Hard Constraints
+
+We now add a hard depth constraint $d$ to the problem above. We again define the depth of the tree as the number of nodes in the longest path from root to leaf (so a tree with just 1 leaf is depth 1). One way to represent the full training objective in this optimization problem is with the piecewise function $R$ below:
+\begin{equation}
+\label{eq:hardreg}
+R(f, \X, \y | \lambda, d) = \begin{cases}
+    L(f, \X, \y) + \lambda s(f) ,  \text{if }\textrm{depth}(f) \leq d \\
+    \infty, \text{if }\textrm{depth}(f) > d
+\end{cases}
+\end{equation}
+
+Let $L(f, \X, \y)$ remain the 0-1 loss, as in the previous subsection. 
+
+Suppose for some dataset X there is a unique optimal tree $f^*$ with respect to this objective, out of all decision trees of depth limit 5. Suppose this tree has depth 4, and has $R(f^*, \X, \y | \lambda, 5) = c$ for some constant $c$.
+
+\begin{enumerate}[i]
+    \item Leaving $\X, \y$ and $\lambda$ unchanged, and considering all possible trees $f$, what is the strongest claim we can make about the optimal objective with depth limit 4, $\min_{f}R(f, \X, \y | \lambda, 4)$. Give your answer as a function of $c$ (inequality symbols are allowed, if needed)?
+    
+    \item Leaving $\X, \y$ and $\lambda$ unchanged, and considering all possible trees $f$, what is the strongest claim we can make about the optimal objective with depth limit 6, $\min_{f}R(f, \X, \y | \lambda, 6)$ as a function of $c$ (inequality symbols are allowed, if needed)? 
+    
+    \item As a function of $\lambda$, what is the minimum possible improvement in accuracy needed, relative to $f^*$, for there to exist a tree of depth 6 that is better than $f^*$?
+    
+
+\end{enumerate}
+
+\newpage
+
+\section{Exploring Gradient Based Optimization Methods (Theory + Applied) Varun - 22 pts}
+In this question, we are going to explore a few gradient based optimization methods and see why some perform better than others. First, consider the function $f(x) = x^2$. We will evaluate the performance of two iterative methods:
+\begin{itemize}
+    \item Gradient descent, which has the following form: 
+\begin{equation}
+    x_t = x_{t-1} - \eta \nabla f(x)\Big|_{x_{t-1}}
+\end{equation}
+\item Gradient descent with momentum, which has the following form: 
+\begin{align}
+    v_t &= \beta v_{t-1} + \eta \nabla f(x)\Big|_{x_{t-1}}\\
+    x_t &= x_{t-1} - v_t
+\end{align}
+where $\beta \in [0,1]$
+\end{itemize}
+For all the sub-questions below, you need to show all your work in order to gain full points. Initialize all methods with $x_0 = 1$ and $v_0 = 0$.
+\paragraph{(a)}
+\begin{enumerate}[i]
+\item Perform three iterations of gradient descent manually, starting from $x_0$, with a learning rate $\eta = 0.1$. Compute the optimality gap $|x_3 - x^*|$.
+
+\item Perform three iterations of gradient descent with momentum with $\eta = 0.1$ and $\beta = 0.5$, again starting from $x_0$. Compute the new optimality gap $|x_3 - x^*|$ and compare it with the value in $a$. After the $3$rd iteration, which method has a lower optimality gap (i.e. has converged faster)?
+
+\paragraph{(b)}
+Now let's see how both methods perform under a more challenging scenario. Consider the function $f(x) = \sin(5x) + \frac{1}{5}x^2$. For this part, you can use Python to simulate both methods and plot your results.
+\begin{enumerate}[i.]
+    \item Plot this function in order to understand its behaviour. Why is this challenging for gradient descent to optimize? 
+   
+    \item Implement gradient descent for this function with learning rate $\eta = 0.1$, $x_0 = 20$, and $20$ iterations. Plot the trajectory of the resulting $x$ values (i.e., plot $x$ over iterations).
+    \item Implement gradient descent with momentum for this function with learning rate $\eta = 0.1$, $\beta = 0.5$, $x_0 = 20$, and $20$ iterations. Plot the trajectory of the resulting $x$ values. Which method achieves the optimum value?
+   
+    \item Let's see how momentum affects trajectory behaviour near a minima. Set $x_0 = 1$ and keep all parameters for both methods fixed. Plot the resulting trajectories for both methods. What do you see now?
+    
+\end{enumerate}
+
+\paragraph{(c)} Neural networks are powered by gradient descent, which uses simplistic linear approximations. However, one could also consider optimizing them using second order methods. Assume we have an objective function $L(\bw)$ (where $\bw$ could correspond to the weights of a black box neural network) which we want to minimize. For this question, you can assume that $L(\bw)$ is at least twice differentiable and has a defined Hessian inverse. 
+\begin{enumerate}[i.]
+    \item Using a starting value of $\bw_0$, write the second order Taylor series expansion of $L(\bw)$ around $\bw_0$. Denote the resulting function $\bar{L}(\bw)$. 
+  
+    \item Find the value of $\bw$ in terms of $\bw_0$ and other relevant parameters that minimizes $\bar{L}(\bw)$. Denote the resulting value $\bw_1$. This is the  update step of the second order method starting from point $\bw_0$.\\
+  
+    \item Now consider the following objective function: \begin{equation}
+    L(\bw) = \frac{1}{2}\bw^T\bA\bw - \bb^T\bw 
+\end{equation}
+where $\bw$, $\bb$ are appropriately shaped vectors and $\bA$ is a matrix (assumed to be invertible). Perform one step of this second order update starting from an arbitrary vector $\bw_0$, showing your work. How does the answer to this question relate to the minimizer of $L(\bw)?$\\
+
+    \item In many real world scenarios, $\bw$ can be very high dimensional (e.g., a neural network with millions of parameters). Even though this method converges in fewer iterations (quadratically!) compared to gradient descent (linearly!), what are the two main bottlenecks in memory and computation that could make this method slow in practice?\\
+  
+\end{enumerate}
+\end{enumerate}
+
+\newpage
+
+\section{Variance of Random Forest and Tree Bagging (Applied) (Harry) 20 pts}
+
+Recall the bootstrap aggregation (bagging) technique from class, which aims to reduce the variance of high variance, low bias predictors such as decision trees. To perform bagging, we repeatedly bootstrap a subsample of the dataset and train a predictor on this subsample. Our final model then combines the results of each of these predictors, usually by taking the majority vote in classification.
+\\\\
+In this problem, we investigate in greater detail how bagging lowers the variance of a predictor both theoretically and experimentally. 
+
+\paragraph{(a)} Suppose that we have $M$ identically distributed random variables $X_i$ with variance $\sigma^2$ and positive pairwise correlation $\rho$. Show that the variance of the mean of these random variables is
+$$\Var\left(\frac{1}{M}\sum_{i=1}^M X_i\right)
+ = \rho\sigma^2 + \frac{1-\rho}{M}\sigma^2$$
+For instance, each random variable $X_i$ could be a predictor on a randomly drawn dataset where the correlation occurs since two predictors would be more similar on more similar sampled datasets.
+
+
+
+\paragraph{(b)} Let $\mathcal{D}$ be the true dataset distribution, and let $(x,y)$ be any data-label pair. Suppose that we have a randomized training algorithm that takes in a point $x$ and a training dataset $D \sim \mathcal{D}$ and outputs a prediction $f(x, D)$ for $x$ after training on $D$. Then, we can decompose the mean squared error (MSE) as
+\begin{equation}\label{eq:decomposition}
+    \mathbb{E}_{D, f}\Bigl[\bigl(y-f(x,D)\bigr)^2\Bigr]
+    = \Bigl(\text{Bias}_{D,f}\bigl[f(x,D)\bigr]\Bigr)^2
+    + \Var_{D,f}\bigl[f(x,D)\bigr]
+\end{equation}
+where 
+\begin{align*}
+    \text{Bias}_{D,f}\bigl[f(x,D)\bigr]
+    &= \mathbb{E}_{D,f}\bigl[y-f(x,D)\bigr] \\
+    \Var_{D,f}\bigl[f(x,D)\bigr]
+    &= \mathbb{E}_{D,f}\Biggl[\Bigl(f(x,D)-\mathbb{E}_{D,f}\bigl[f(x,D)\bigr]\Bigr)^2\Biggr].
+\end{align*}
+Equation (\ref{eq:decomposition}) is known classically as the \emph{bias-variance decomposition}, and it shows that the MSE is the sum of the \emph{bias}, how far the training algorithm is from the label in expectation, and the \emph{variance}, how sensitive the training algorithm is to the training dataset. In particular, note that the expectations are taken with respect to the dataset draws and the randomization of the training algorithm, not with the data point evaluated on.
+\\\\
+To connect this with Part (a), let $f_i(x,D)$ be the $i$th identically distributed predictor, and let $f(x,D)=\frac{1}{M}\sum_{i=1}^M f_i(x,D)$ be the resulting aggregate training predictor. 
+% For instance, $f_i(x,D)$ may be the prediction for the $i$th predictor in a bagged model that takes in a training dataset $D$, learns from it, and then outputs a prediction for $x$. The function $f(x,D)$ would then be the prediction (on $x$, after training on $D$) of the overall bagged model. 
+From Part (a), the variance of $f(x,D)$ approaches $\rho(x)\sigma^2(x)$ as $M \to \infty$, where $\rho(x)$ is the correlation between the predictors on $x$ and $\sigma^2(x)$ is the variance of each predictor on $x$. This suggests that we can decrease the variance under bagging by decreasing either the variance of each predictor or the correlation between predictors. By bootstrapping the samples of the training dataset within the training algorithm, we reduce the correlation between predictors by introducing randomness into the decision trees making up the ensemble (if we fit decision trees without randomizing, we'll get perfectly correlated trees!).
+\\\\
+When we use decision trees as the base predictor, we call this method \emph{tree bagging}. However, we can further attempt to improve upon this method using \emph{random forests}, where we additionally randomly select a subset of the features as options to split on at each possible split point. This further decreases the correlation between predictors, decreasing the overall variance. The remainder of this problem is dedicated towards verifying this claim.
+\\\\
+It is highly recommended to use the \texttt{sklearn} library, particularly the \texttt{sklearn.ensemble.BaggingRegressor} and \texttt{sklearn.ensemble.RandomForestRegressor} tools. The data for this problem can be found in \texttt{Canvas -> Files -> HW2}.
+
+\begin{enumerate}[i.]
+    \item We will model the true distribution of data $\mathcal{D}$ as a uniform random bootstrap sample drawn from the Wine dataset. Since it is computationally intractable to compute every possible bootstrap training dataset in $\mathcal{D}$, we will instead estimate $\mathbb{E}_{D \sim \mathcal{D}}$ by taking the average over many bootstrap datasets $D \sim \mathcal{D}$.
+    \\\\
+    Create a function that draws a bootstrapped training dataset $D \sim \mathcal{D}$ by uniformly sampling $N$ samples with replacement from the \texttt{wine\_true.csv} files. Furthermore, let $X$ denote the test samples in the \texttt{wine\_test.csv} file. 
+
+    \item Using the function you created in part (i), draw $3000$ bootstrapped training datasets $D \sim \mathcal{D}$ of size $N=1024$. For each dataset, train a tree bagging model with $2$ trees, where each tree uses $500$ bootstrapped samples (sampled with replacement from the size 1024 sample, which is itself a bootstrap from the true data). For each $x \in X$, estimate the correlation $\rho(x)$ between the predictions on $x$ of the first and second trees of the model. (i.e., the correlation is between two vectors, one of size $3000$ for the first trees, and the other of size $3000$ for the second trees).
+
+    \item For each of $4$ values of a variable $F$ that you choose (where $F$ is an integer between 2 and the number of features minus 1), draw $3000$ bootstrapped training datasets $D \sim \mathcal{D}$ of size $N=1024$. For each dataset, train a random forest model with $2$ trees, where each tree uses $500$ bootstrapped samples and $F$ bootstrapped features at each split. For each $x \in X$, estimate the correlation $\rho(x)$ between the predictions on $x$ of the first and second trees of the model.
+
+    For each $F$, compute the average value of the estimate for $\rho(x)$ over $x$.
+
+    Hint: This may take a few minutes to run.
+
+    \item Compare the results of Parts (ii) and (iii). Did the tree bagging method or random forest method produce a lower correlation? How does the correlation relate to $F$? Do these match what you expected?
+
+\end{enumerate}
+
+\newpage
+
+\section{Boosting (Applied) (Richard) - 10 pts}
+
+In this question, you will predict whether a customer will default on their payments next month, using Adaboost and XGBoost. We will use the \texttt{credit\_card\_default.csv}  dataset in\texttt{Canvas->Files->HW2}, which includes 23 explanatory variables including the payers' demographic information and payment history, and 1 response variable named \texttt{Y}. More information on the dataset and the variables can be found \href{https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients}{here}. You may use sklearn and XGBoost libraries for this question. 
+
+
+\paragraph{(a)} Read the dataset and perform any data processing if necessary. Briefly summarize what you did and why.
+
+\paragraph{(b)} Split 80\% of the data for training and 20\% for testing using \texttt{train\_test\_split}. Fit an Adaboost classifier on the credit card default dataset using sklearn and use five-fold cross-validation to tune at least 1 hyperparameter. Repeat this with XGBoost. Use decision trees as the base estimators. Report the hyperparameter you tuned, and the value you found for that parameter. 
+
+\paragraph{(c)} Fit using the best hyperparameters from cross-validation in (b), then evaluate both Adaboost and XGBoost on the test set and compare the models' performance using accuracy on the test set. Then, plot and interpret a confusion matrix for both models. Please interpret the confusion matrix in the context of credit lending.
+
+\paragraph{(d)} For the training set, plot ROC curves for all individual features and for the full model, on the same plot. We suggest coloring the full model's ROC curve in black and using lighter colors for the features.
+
+\paragraph{(e)} Calculate (Gini) variable importance for Adaboost using \texttt{feature\_importances\_}. In addition to using the built-in feature importance, write your own permutation importance on the training set without using any packages. Compare the values for the variable importance to see if they are similar. Visualize both results in a bar chart ordered by importance. Discuss the most important features and how they \emph{might} influence credit card default in the future.
+
+
+\newpage
+
+\section{GAMs and the Rashomon Effect (Applied) (Zack) - 24 pts}
+
+In this question, you will fit a generalized additive model (GAM) to the Wine dataset with a few different approaches: first by using the \texttt{fastsparsegams} library to quickly find regularized GAMs, then by using \texttt{xgboost.XGBClassifier}, 
+\texttt{sklearn.ensemble.AdaBoost}, and \texttt{sklearn.ensemble.RandomForest} to find a GAM with shape functions defined by ensembles of decision stumps (depth $1$ decision trees). Then, you'll use \texttt{interpret.glassbox.GAMChanger} to explore the variety of viable GAMs, and pick your own!
+
+\color{blue}
+Starter code (please only Google Colab):
+
+\url{https://colab.research.google.com/drive/1ZtKKh5RUt4aFmkPpF0ra--6ZI3K97fvx?usp=sharing}
+\color{black}
+
+\paragraph{(a)} Using \texttt{max\_support\_size=50}, the logistic loss, and \texttt{algorithm=`CDPSI'}, fit a GAM using FastSparseGAMs. The output of this is a `solution path', which is a sequence of models of increasing complexity up to your maximum support size. Find the model with the best validation accuracy and report its regularization parameter (\texttt{lambda\_0}), its support size, and its validation accuracy. To access this solution path, use the \texttt{.characteristics()} method of the fit GAM.
+
+
+
+\paragraph{(b)} Using the provided utility function (\texttt{plot\_shape\_functions\_fastsparse}), plot the shape functions of the model you found in part (a). Please interpret these shape functions in the context of the problem (i.e. what do these shape functions tell you about the predictive impact of each feature on wine quality)?
+
+
+
+\paragraph{(c)} Observe that the shape function is composed of weighted indicator variables for whether a feature is less than or equal to a specific value. Each indicator variable is a decision stump! So we should be able to find a GAM with an ensemble of decision stumps. The \texttt{AdaBoost} algorithm is based on this principle. You could also use an algorithm like \texttt{xgboost} or \texttt{Random Forests} to find an ensemble of decision stumps. With an \texttt{n\_estimators=50} for all approaches, \texttt{algorithm=`SAMME'} for \texttt{sklearn.ensemble.AdaBoost}, and \texttt{max\_depth=1} for \texttt{xgboost.XGBClassifier} and \texttt{sklearn.ensemble.RandomForest}, fit GAMs with decision stumps and report the validation accuracy for each approach. Are any approaches significantly better or worse than the others? Please explain why you think this may be occurring.
+
+
+\paragraph{(d)} Plot the shape functions for the different tree ensembling methods using the provided utility function (\texttt{plot\_shape\_functions\_tree\_ensemble}). Compare and contrast their shape functions with those generated by \texttt{FastSparseGAM} (when they use the same feature). Do your intuitions about the predictive impact of the features hold across all four methods? 
+
+
+\paragraph{(e)} You may have noticed in part (d) that there are several GAMs (found by different methods and with different shape functions) which perform about equally well. We will now use a tool called \texttt{GAMChanger} to explore this variety. Fit an Explainable Boosting Classifier (\texttt{interpret.glassbox.ExplainableBoostingClassifier}) with no interaction terms (\texttt{interactions=0}) on the data and use \texttt{gamchanger.visualize} to visualize its shape functions (pass in the validation data to see evaluation measures update in real time). You can use the GAMChanger tool to manually edit the GAM's shape functions! Use this tool to make the shape function monotonically increasing over `\texttt{alcohol}'. Make `\texttt{volatile\_acidity}' monotonically decreasing. 
+Now make any other changes you see fit (smooth out noisy sections, if a section looks monotonic enforce monotonicity, or anything else you want) without decreasing validation accuracy too much. Describe some of the changes you made. Were you able to make reasonable changes without affecting accuracy? What does this tell you about the size of the `space' of good models for this problem?
+
+
+
+\color{black}
+
+\end{document}
