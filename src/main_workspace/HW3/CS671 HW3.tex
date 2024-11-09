@@ -1,0 +1,313 @@
+\documentclass{exam}
+\usepackage[utf8]{inputenc}
+\usepackage{amsfonts}
+% \usepackage{gensymb}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{bm}
+\usepackage{ragged2e}
+\usepackage{hyperref}
+\usepackage{amsthm}
+\usepackage{verbatim}
+\usepackage{amsmath,dsfont,amssymb}
+\usepackage{enumerate}
+\usepackage{color}
+\usepackage{bm}
+\usepackage{bbm}
+\usepackage{tikz-qtree}
+\usepackage{forest}
+\usepackage{url}
+\usepackage{float}            % for [H] figure placement
+
+% Custom definitions
+\def\Pr{\text{Pr}}
+\def\E{\text{E}}
+\def\V{\text{V}}
+\def\R{\mathbb{R}}
+\makeatletter
+\newcommand{\pushright}[1]{\ifmeasuring@#1\else\omit\hfill$\displaystyle#1$\fi\ignorespaces}
+\newcommand{\pushleft}[1]{\ifmeasuring@#1\else\omit$\displaystyle#1$\hfill\fi\ignorespaces}
+\makeatother
+
+\def\Rtrue{R^{\text{true}}}
+\def\Imp{\text{Imp}}
+\def\tree{\text{tree}}
+\def\rf{\text{rf}}
+\def\OOB{\text{OOB}}
+\def\T{\mathcal{T}}
+\def\F{\mathcal{F}}
+\def\one{\mathcal{T}}
+
+\DeclareMathOperator{\sign}{sgn}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\corr}{corr}
+
+\newcommand{\One}[1]{ \mathbbm{1}_{\left[#1\right]}}
+\newcommand{\sangle}[1]{\langle #1 \rangle}
+\newcommand{\abs}[1]{\left | #1 \right |}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\usepackage[skip=2pt,it]{caption}
+\title{Homework 3, Machine Learning, Fall 2024}
+\author{ }
+\date{}
+
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={CS 671 HW3 2024},
+    pdfpagemode=FullScreen,
+}
+
+
+\begin{document}
+\maketitle
+\textbf{*IMPORTANT* Homework Submission Instructions}
+\begin{enumerate}
+    \item For all coding components, complete the solutions with a Jupyter notebook/Google Colab, and export the notebook (including both code and outputs) into a PDF file. Concatenate the theory solutions with the coding solutions into \textbf{a single} PDF file which you will submit to Gradescope. 
+    \item All solutions should be typed. 
+    \item Gradescope will prompt you to label the pages for each question. Please do this carefully. 
+    \item You must show work or give an explanation for every question. ``Yes'' and ``No'' are not sufficient answers. Always show the steps of your calculations. Only partial credit can be given if you do not explain your answer.
+    \item Failure to adhere to the above submission format may result in penalties.  
+\end{enumerate}
+
+\paragraph{} As a reminder, don’t wait until the last minute to ask for help, because the person you need to speak with might be dealing with many other students close to the deadline. Also, the teaching staff has been instructed that it is not mandatory for them to answer questions on the day the homework is due. So get your questions in early! \\
+
+There is no collaboration on homework. You must do your own work; we feel this is the best way to learn. If you get stuck, you are welcome to discuss conceptual issues with your classmates or the TAs but you may not show your classmates any part of your code or solutions or proof steps on paper. Do not ask another classmate to perform coding for you or to show you the answer to the problem. You can look at reference material on the Internet such as ChatGPT, but don’t look at that unless you are really stuck, and make sure your answer is complete - don’t write “Because I found a theorem that says the answer is X”. You must show your complete work for each question. You are required to state what references you used (if you used an outside source). \textbf{Please copy the following statement at the top of your assignment file}: \\
+
+This assignment represents my own work. I did not work on this assignment with others. All coding was done by myself. \\
+
+\newpage
+
+\section{Maximum Likelihood Learning for Multi-Output Regression \nobreak (Theory) (Varun) - 25 pts}
+A data-scientist has collected a regression dataset comprising $N$ independent scalar inputs $\{x_n\}_{n=1}^N$ and $N$ scalar outputs $\{y_n\}_{n=1}^N$. The goal is to predict $y$ from $x$, assuming that the data are generated according to a very simple linear model $y_n = ax_n + \epsilon_n$ ($a \in \R$ is a scalar value). \\
+The data-scientist also has access to a second set of outputs $\{z_n\}_{n=1}^N$ generated according to $z_n = x_n + \epsilon^\prime_n$. Assume that the noise variables $\epsilon_n$ and $\epsilon^\prime_n$ are known to be zero-mean Gaussian random variables, and that they are correlated according to a joint Gaussian distribution with mean $\mathbf{0}$ and covariance $\Sigma$: 
+\begin{equation}
+p\Bigg(\begin{bmatrix}
+\epsilon_n \\
+\epsilon_n^\prime
+\end{bmatrix}\Bigg) = \mathcal{N}\Bigg(\begin{bmatrix}
+\epsilon_n \\
+\epsilon_n^\prime
+\end{bmatrix}; \mathbf{0}, \Sigma\Bigg),
+\end{equation}
+where $\Sigma = \begin{bmatrix}
+1 & \beta \\
+\beta & 1
+\end{bmatrix}$. 
+In this problem, we will investigate how the correlation between the noise variables influences the data-scientist's estimate for $a$.
+\\
+
+\textbf{Note:} The probability density of a multivariate Gaussian distribution of mean $\mu$ and covariance $\Sigma$ is given by: 
+\begin{equation}
+    \mathcal{N}(\mathbf{x}; \mu, \Sigma) = \frac{1}{\sqrt{\det(2\pi\Sigma)}}\exp\Big(-\frac{1}{2}(\mathbf{x}-\mu)^T\Sigma^{-1}(\mathbf{x}-\mu)\Big)
+\end{equation}
+\paragraph{(a)}Provide an expression for the joint log-likelihood of the outputs given $a$, the scalar inputs $x_n$, and $\beta$, i.e. $p\bigg(\{y_n\}_{n=1}^N,\{z_n\}_{n=1}^N\bigg|a,\{x_n\}_{n=1}^N, \beta\bigg)$. 
+
+\noindent Hint: We can write the noise variables in terms of $x_n$, $y_n$, and $z_n$: 
+\begin{align}
+    \epsilon_n &= y_n - ax_n \\ 
+    \epsilon_n^\prime &= z_n - x_n
+\end{align}
+
+
+\paragraph{(b)} Compute the maximum likelihood estimate for $a$.
+
+\newpage
+
+\section{Regression, Regularization (Theory) (Matthew) - 25 pts}
+
+Assume we are given a dataset $D$ with $n$ samples, $d$ features, and continuous outputs so that each $(\mathbf{x}_i, y_i) \in D$ is an input-output pair with $\mathbf{x}_i \in \R^d$ and $y_i \in \R$. Consider a linear model parameterized by $\theta := (\theta_1, \ldots, \theta_d) \in \R^{d}$ and a bias term $\theta_0$ of the form:
+\begin{equation}
+    \hat{y}_{\theta}(\mathbf{x}) = \theta_0+\sum_{j=1}^d \theta_j x_j
+\end{equation}
+\paragraph{(a)} For this problem, we will work with the mean squared error (MSE) function given by:
+\begin{equation}
+\label{eqn:rr_1}
+    L_D(\theta) = \frac{1}{n}\sum_{i=1}^n \left(\hat{y}_{\theta}(\mathbf{x}_i)-y_i\right)^2
+\end{equation}
+Suppose that Gaussian noise $\epsilon_{i} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I_{d})$ ($I_d$ is the $d \times d$ identity matrix) is added independently to each input to form a new dataset $\tilde{D}$. That is, for $\tilde{\mathbf{x}}_i \in \tilde{D}$, for each feature $j \in \{1, \ldots, d\}$ we have $\epsilon_{i, j} \sim \mathcal{N}(0, \sigma^2)$ and thus
+\begin{equation}
+    \tilde{\mathbf{x}}_i = (x_{i, 1} + \epsilon_{i, 1}, \ldots, x_{i, d} + \epsilon_{i, d})^T
+\end{equation}
+
+\begin{enumerate}[i.]
+\item Show that, if we average over possible draws of noise $\epsilon_i$, the quadratic error function over the noisy data simplifies to the original loss $L_D$ plus an additional term which penalizes the $\ell_2$ norm of the parameters $\theta$ (not including the bias term). 
+
+\item What is the regularization parameter as a function of $\sigma$, and what does that tell us about the effect of noise on the optimal model?
+\end{enumerate}
+
+
+
+\paragraph{(b)} Instead of the regularization occurring due to noise in the dataset, we can also induce regularization by placing a prior probability distribution on the model parameters. Instead of an explicit loss, now suppose that we model the labels $Y_i$ as being generated by the sum of the model output and a Gaussian noise $\epsilon_i \sim \mathcal{N}(0, \sigma^2)$, so that $Y_i=\theta^T\mathbf{x}_i+\epsilon_i$. Furthermore, suppose that we have a prior belief that the model parameters $\theta$ are drawn from a Laplace distribution with parameter $b$ so that $P(\theta_j)=\frac{1}{2b}\exp(-\frac{\abs{\theta_j}}{b})$. 
+\\\\
+\begin{enumerate}[i.]
+\item Show that the MAP (Maximum A Posteriori) Estimation\footnote{MAP Estimation combines prior knowledge (represented by the prior probability) with the evidence from observed data (represented by the likelihood function) to provide an estimate of the model parameters. The goal of MAP estimation is to find the parameter values that maximize the posterior probability.} of the parameters $\theta$ naturally incorporates the effect of L1 regularization. 
+\item What is the induced loss function, and how does the strength of the regularization parameter change with $b$?
+\end{enumerate}
+
+The general formula for MAP estimation is:
+$$
+    MAP = \arg\max_{\theta} \left[ P(Y \mid \theta, X) P(\theta) \right]
+$$
+where $P(Y \mid \theta, X)$ is the likelihood function of the dataset label $Y$ given the model parameters $\theta$ and the input data $X$, and $P(\theta)$ is the prior probability of the parameters.
+
+
+\newpage
+
+\section{Transformers Implementation for GPTs (Coding) (Muchang, Eric) 15 pts}
+
+Generative Pretrained Transformers (GPTs) have recently gained prominence as the state-of-the-art architecture for many NLP tasks. If you've ever used ChatGPT, as the name suggests, you've used a GPT model. In the following question, you will develop a \texttt{Pytorch} implementation of the multi-head attention layer of a lightweight GPT model. Using a preprocessed dataset of Shakespeare's plays with a character-level tokenization, you'll then train the model to generate novel Shakespearean text. 
+
+Before beginning to code, you will need to set up your environment. First, git clone this \href{https://github.com/mbahng/mini_transformer}{repository} and create a \texttt{conda} environment with \texttt{numpy} (\texttt{conda install numpy}) and \texttt{torch} (\texttt{pip install torch}) installed. Make sure to activate it before you start. 
+
+Based on our experiments, the model \emph{should} be lightweight enough to be trained on a personal machine. As another option, you may also use your Google Cloud credits to reserve a VM on Google Cloud Platform (GCP) for this question. See the announcement on Ed for more details on obtaining credits. Alternatively, you can also reserve a VM through \href{https://vcm.duke.edu/apps/index}{Duke OIT}, though it may be less powerful than a GCP VM. 
+
+To briefly go over this repository, 
+\begin{enumerate}
+    \item \texttt{model.py} defines the actual transformer model that we will train. Note that a transformer model consists of multiple \textit{self-attention modules} which each consist of a \textit{self-attention layer} plus a simple \textit{multilayer perceptron} (MLP), including nonlinearities and normalization layers, which help with training. The \texttt{Block} class composes both the \texttt{SelfAttention} class and \texttt{MLP} class for another layer of abstraction. 
+    \item These decoder layer modules are stacked on top of each other within the transformer model, which you can see in the \texttt{transformer} attribute of the \texttt{Transformer} class. 
+    \item \texttt{train.py} is a script that will train the model. 
+    \item \texttt{sample.py} is a script that will generate text from the model. 
+\end{enumerate}
+
+To set up some notation, if the embedding dimension is $C$, and the sequence length is $L$, then a sequence of text inputs can be written as a matrix of shape $L \times C$, also called a \textit{rank 2 tensor}.\footnote{A scalar is a rank 0 tensor. A vector, which is an array of scalars, is a rank 1 tensor. A matrix, which is an array of vectors, is a rank 2 tensors. So on and so forth.} 
+
+To parallelize these operations, PyTorch supports \textit{batching} of inputs, allowing you to input a collection of $B$ matrices of shape $L \times C$, stored in a \textit{rank 3 tensor} of shape $B \times L \times C$, and performing the same operations on every single matrix at once. This also helps with parallelizing matrix multiplication (and other operatons) over higher order tensors. For example, if $A$ has shape $B_1 \times \ldots \times B_k \times L \times M$ and $B$ has shape $B_1 \times \ldots \times B_k \times M \times N$ , then $AB$ has shape $B_1 \times \ldots \times B_k \times L \times N$. We are essentially matrix multiplying over the last two ranks. You should get familiar with this concept of batching, as it will save you a lot of time and effort compared to using for loops. \textit{We do not recommend using for loops, as both the code tends to get messy and the runtime will be significantly slower.}
+
+\paragraph{(a)} To begin, we will first perform a quick sanity check to ensure your environment has been set up correctly: run the command \texttt{python sample.py} from the base of the repository to generate a sample of text. You should notice that the results just look like a random sequence of characters. There are two reasons for this: we haven't implemented the attention layer, nor have we trained the model.
+
+
+
+\paragraph{(b)}  Let's focus on the attention layer first. We will do this step by step by implementing the \texttt{forward} method in \texttt{SelfAttention} class in \texttt{model.py}. Recall that the formula for scaled-dot product single-headed attention is 
+\begin{equation} 
+  \mathrm{Attention}(Q, K, V) = \mathrm{softmax} \bigg( \frac{Q K^T}{\sqrt{C}} \bigg) V
+\end{equation} 
+where $Q, K, V$ are the query, key, value matrices, and the softmax operation is done over the \textit{rows} of the input matrix. Each of these steps should not take more than 10 lines of code each. We have provided an outline in the codebase as a guide, but you do not necessarily have to follow it. 
+
+\begin{enumerate}[i.]
+    \item The query, key, and value matrices are computed by \texttt{self.c\_attn}, which is a linear layer $\ell$ that maps each token $\mathbf{x}$ to its associated key, query, and value vectors through the map
+    \begin{equation}
+        \ell(\mathbf{x}; \mathbf{A}, \mathbf{b}) = \mathbf{A} \mathbf{x} + \mathbf{b} = \begin{pmatrix} \mathbf{q} \\ \mathbf{k} \\ \mathbf{v} \end{pmatrix}
+    \end{equation}
+    where $\mathbf{x} \in \mathbb{R}^{C}$, $\mathbf{A} \in \mathbb{R}^{3C \times C}$, and $\mathbf{b} \in \mathbb{R}^{3C}$. This is batched over the entire sequence length $L$ and over the $B$ batches for each sequence, so our output wouldn't be simply in $\mathbb{R}^{3C}$, but rather of size $B \times L \times 3C$. You want to take this output matrix of parameters and partition it into the query, key, value matrices, each of size $B \times L \times C$. 
+    
+    \item We want to implement \textit{multihead} attention by further partitioning each matrix into $H$ submatrices, where $H$ is the number of heads. $H$ is available as \texttt{self.n\_head} within the class. 
+    \begin{align*}
+        Q & \mapsto (Q_1, \ldots, Q_H) \\ 
+        K & \mapsto (K_1, \ldots, K_H) \\ 
+        V & \mapsto (V_1, \ldots, V_H)
+    \end{align*}
+    To implement multihead attention, we want to add an extra rank to change the shape of each matrix from $(B \times L \times C) \mapsto (B \times H \times L \times  C/H)$. Note that $H$ must evenly divide $C$ since we want to evenly partition the embedding dimension, so $C/H$ will always be an integer. The same logic should be looped through the $K$ and $V$ matrices as well. A visual is provided for some intuition. 
+
+    \begin{figure}[H]
+      \centering 
+      \includegraphics[scale=0.25]{multihead_visual.png}
+      \caption{A visualization of how a single element of a batch, of shape $L \times C$, should be reshaped to shape $H \times L \times C/H$. You want to add an extra dimension by stacking these submatrices on top of each other. In the end, we should satisfy \texttt{Q[i, j, :, :].shape = (T, C // H)}.} 
+      \label{fig:multihead_visual}
+    \end{figure}
+    
+    \item Now we must actually implement the attention operation described in the equation above. First, implement only the operation 
+    \begin{equation}
+        \frac{Q_i K_i^T}{\sqrt{C/H)}}
+    \end{equation} 
+    for all $i = 1, \ldots H$ over all batches. Once this is done, your result should be of shape $B \times H \times L \times L$. 
+
+    \item We also need a masking step since this is a decoder architecture. We have provided a \texttt{self.mask} attribute consisting of a lower triangular matrix of $1$s. Use this to mask your output so that future tokens are ignored in the attention score. You might find the \texttt{torch.Tensor.masked\_fill()} operation helpful. 
+
+    \item Then, we can apply the softmax operation on the rows over each head and batch. After this should be a dropout layer, which we have implemented for you. Finally, we can multiply by the value matrix $V$ to get the head outputs $y$. After this step, the assertion statement that we have implemented on \texttt{y.shape} should hold true. 
+\end{enumerate}
+
+
+\paragraph{(c)} Train this model using the command \texttt{python train.py} and plot the loss curve over time. Note that training for 2000 epochs on Google Cloud is estimated to take between 5-20 minutes. You should allocate your time accordingly for training. 
+
+\paragraph{(d)} Generate a new brief Shakespearean text using the command \texttt{python sample.py} and post your output. Now you have learned the details of a minimal transformer architecture. 
+
+\newpage
+
+\section{Attention and Convolution (Coding) (Zack) - 20 pts}
+In this question, we will use the PyTorch framework to explore some properties of self-attention and some connections between self-attention and convolution\footnote{In this problem ``convolution'' refers to the operation used in convolutional neural networks. Formally, we are actually going to discuss cross-correlation, but the machine learning community refers to this operation as convolution by convention.}. First, we define the notion of a ``similarity metric'', which can be thought of as the opposite of a distance metric. Formally, we call a function $s: \mathbb{R}^{d \times d} \to \mathbb{R}$ a similarity metric if, for any $\mathbf{x}, \mathbf{y}, \mathbf{z} \in \mathbb{R}^d$:
+\begin{enumerate}
+    \item $s$ is bounded above by some value $b$: $s(\mathbf{x}, \mathbf{y}) \leq b$.
+    \item The similarity between an object and itself is the maximum similarity possible: $s(\mathbf{x}, \mathbf{x}) = b$
+    \item The similarity between two distinct objects is not the maximum similarity: $\mathbf{x} \neq \mathbf{y} \implies s(\mathbf{x}, \mathbf{y}) < b$
+    \item Similarity is symmetric: $s(\mathbf{x}, \mathbf{y}) = s(\mathbf{y}, \mathbf{x})$
+\end{enumerate}
+
+\paragraph{(a)} 
+When learning about convolution, you may have learned that it is similar to template matching, where we find the similarity between a template and an image at each location. In the first part of this problem, we will use the PyTorch package to visually explore whether convolution is computing a similarity function. First, recall the definition of convolution. For an input matrix $\mathbf{Z} \in \mathbb{R}^{d_{\text{in}} \times h_{\text{in}} \times w_{\text{in}}}$ and a learned tensor of $d_{\text{out}}$ convolutional filters $\mathbf{K} \in \mathbb{R}^{d_{\text{out}}\times d_{\text{in}} \times h_{\text{kernel}} \times w_{\text{kernel}}}$, the output of a simple 2 dimensional convolution at position $h, w$ for filter $j$ is:
+\begin{align}
+\label{eq:convolution}
+    (\mathbf{Z} * \mathbf{K})_{j, h, w} = \sum_{a=1}^{d_{\text{in}}}
+    \sum_{b=1}^{h_{\text{kernel}}}
+    \sum_{c=1}^{w_{\text{kernel}}}  k_{j,a,b,c} z_{a, h+b-\lfloor h_{\text{kernel}/2}\rfloor, w+c-\lfloor h_{\text{kernel}/2}\rfloor},
+\end{align}
+where the $*$ operator denotes convolving the first tensor with the second.
+For simplicity, in this problem we will consider convolution with $h_{\text{kernel}} = w_{\text{kernel}} = 1,$ simplifying Equation \ref{eq:convolution} to
+\begin{align}
+\label{eq:convolution_ez}
+    (\mathbf{Z} * \mathbf{K})_{j, h, w} = \sum_{a=1}^{d_{\text{in}}} k_{j,a,1, 1} z_{a, h, w}.
+\end{align}
+We will also consider $d_{\text{in}} = 3$ to be the RGB representation of a pixel at each location, allowing easy visualization. The starting notebook available at \href{https://colab.research.google.com/drive/1Hg2nFZxd7fE1LIG9DWnsTKINxfdjPaz4?usp=sharing}{this link} provides an input tensor and a kernel tensor. Use this starting notebook to:
+\begin{enumerate}[i.]
+    \item Visualize the provided input tensor using Matplotlib's imshow function. Additionally, visualize each filter in the given ``kernels'' tensor as a separate subplot in one figure. Note that PyTorch and Matplotlib follow different conventions around the semantics of each axis in a tensor. In PyTorch, an image is represented with the channel dimension (e.g., RGB) first, followed by height and width. In Matplotlib, the convention is height and width followed by channel. To display torch tensors using matplotlib, you will need to reorder the axes using torch.permute such that the channel dimension comes last rather than first. Note that the color of each filter appears in the input tensor.
+    \item Use the PyTorch function \href{https://pytorch.org/docs/stable/generated/torch.nn.functional.conv2d.html}{torch.nn.functional.conv2d} to convolve the given input tensor with the given kernels. This should produce an output tensor in $\mathbb{R}^{d_{\text{out}} \times h_{\text{in}} \times w_{\text{in}}}.$ Display the activation map for each kernel as a subplot of one plot, i.e., produce $d_{\text{out}}$ subplots of shape $h_{\text{in}} \times w_{\text{in}}.$ Based on these visualizations, you should notice that the entries in these matrices are not produced by a similarity function. State which  of the rules for similarity functions is violated and how you know.
+    \item Let's take a moment to consider something that \textit{is} a similarity function. For two vectors $\mathbf{x}, \mathbf{y} \in \mathbb{R}^d$, the cosine similarity between $\mathbf{x}$ and $\mathbf{y}$ is defined to be:
+    \begin{align}
+        \text{CosSim}(\mathbf{x}, \mathbf{y}) := \cos(\theta(\mathbf{x}, \mathbf{y})),
+    \end{align}
+    where $\theta: \mathbb{R}^{d \times d} \to [0, 2\pi)$ is a function that gets the angle between two vectors. Prove that CosSim is a similarity metric. Hint: $\theta$ is a distance metric.
+    
+    \item Implement CosSim using a processing step on $\mathbf{Z}$ and $\mathbf{K}$ and torch.nn.functional.conv2d; that is, perform a transformation $T$ on $\mathbf{Z}$ and $\mathbf{K}$ such that $(\bar{\mathbf{Z}} * \bar{\mathbf{K}})_{j, h, w}$ computes a cosine similarity, where $\bar{\mathbf{Z}} = T(\mathbf{Z})$ and $\bar{\mathbf{K}} = T(\mathbf{K})$. Display the activation map for each kernel. Do the activation maps reflect a similarity function? What is the difference between what you just implemented and a normal convolution? Hint: Recall that $\mathbf{x}^T \mathbf{y} = \|\mathbf{x}\|_2 \|\mathbf{y}\|_2 \cos(\theta(\mathbf{x}, \mathbf{y})).$
+\end{enumerate}
+
+\paragraph{(b)} 
+We now attend to attention. Recall the definition of dot product attention as computed in \href{https://arxiv.org/pdf/1706.03762.pdf}{``Attention is All You Need''}. For matrices $\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{w_{\text{in}} \times d_{\text{in}}},$ we have
+\begin{equation}
+\label{eq:attention}
+    \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) := \text{softmax}\left( \frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d_{\text{in}}}}\right)\mathbf{V}.
+\end{equation}
+In the simplest form of self-attention, an input matrix $\mathbf{Z} \in \mathbb{R}^{w_{\text{in}} \times d_{\text{in}}}$ is passed as all three arguments, i.e.
+\begin{align*}
+    \text{SimpleSelfAttention}(\mathbf{Z}) := \text{Attention}(\mathbf{Z},\mathbf{Z},\mathbf{Z}) &= \text{softmax}\left( \frac{\mathbf{Z} \mathbf{Z}^T}{\sqrt{d_{\text{in}}}}\right)\mathbf{Z}.
+\end{align*}
+
+\begin{enumerate}[i.]
+    \item Note that you were given an input image in $\mathbb{R}^{d_{in} \times h_{in} \times w_{in}},$ which does not quite line up with the dimensions expected for attention. Flatten the given input into a matrix of shape ($d_{in}$, $h_{in}w_{in}$), transpose the resulting matrix to shape ($h_{in}w_{in}$, $d_{in}$), and use it to compute $\mathbf{Z}\mathbf{Z}^T.$ Visualize the resulting matrix with imshow. Based on this visualization, could the entries in the resulting matrix be produced by a similarity function? State whether one of the rules for similarity functions is violated and how you know.
+    \item Compute $\text{softmax} \left( 
+    \frac{\mathbf{Z}\mathbf{Z}^T}{\sqrt{d_{\text{in}}}}\right),$ and visualize the resulting matrix. Based on this visualization, could the entries in this matrix be produced by a similarity function? State whether a rule for similarity metrics is violated and how you know.
+    \item Let $\bar{\mathbf{Z}}:=\begin{bmatrix}
+        1/\|\mathbf{z}_{1, :}\|_2 & 0 & \hdots & 0\\
+        0 & 1/\|\mathbf{z}_{2, :}\|_2 & \hdots & 0\\
+        \vdots & & & \vdots\\
+        0 & 0 & \hdots & 1/\|\mathbf{z}_{ h_{in} \times w_{in}, :}\|_2
+    \end{bmatrix}.$ So the resulting matrix $\Bar{\mathbf{Z}}$ should be in the shape of $(h_{in} \times w_{in}, h_{in} \times w_{in})$. Finally, compute $\text{softmax}\left( 
+    \frac{\bar{\mathbf{Z}}(\mathbf{Z}\mathbf{Z}^T) \bar{\mathbf{Z}}}{\sqrt{d_{\text{in}}}}\right),$ and visualize the resulting matrix (Note: The softmax should be applied across the resulting matrix, so you should flatten it before applying the softmax operation in PyTorch and reshape it after). Based on this visualization, could the entries in this matrix be produced by a similarity function? State whether one of the rules for similarity functions is violated and how you know.
+
+    \item Based on the prior questions, you can see a connection between attention and convolution. Implement the function $f(\mathbf{Z}) := \frac{\bar{\mathbf{Z}}(\mathbf{Z}\mathbf{Z}^T) \bar{\mathbf{Z}}}{\sqrt{d_{\text{in}}}}$ using a convolution; reshape the output to a matrix of the appropriate size, and visualize the result. Hint: Recall that $
+    \frac{\bar{\mathbf{Z}}(\mathbf{Z}\mathbf{Z}^T) \bar{\mathbf{Z}}}{\sqrt{d_{\text{in}}}} \in \mathbb{R}^{w_{\text{in}}h_{\text{in}} \times w_{\text{in}}h_{\text{in}}}$ and $(\mathbf{Z} * \mathbf{K}) \in \mathbb{R}^{d_{\text{out}} \times h_{\text{in}} \times w_{\text{in}}}.$ How many convolutional kernels will you need to make these dimensions match?
+\end{enumerate}
+
+\newpage
+
+\section{Attention in Graph Neural Networks (Coding) (Stephen) - 15 pts}
+
+Oh no! We accidentally threw our entire collection of classical music scores into a wood chipper, and everything is shredded into multiple scraps of paper with just 50 musical notes per scrap. We need to put everything back together, but this is a daunting task. Let's automate part of the process by using a Graph Neural Network (GNN) to group different scraps by the composer who wrote the score.
+
+Here's the plan: We are going to use a GNN to represent and encode the musical notes for \textit{graph classification}. In other words, we'll translate a scrap of music into a \textit{multi-relational} graph, where notes are nodes, and the relationships between the notes are represented by various types of edges. This graph representation of the music will then be processed by a few \textit{message passing} layers using our old friend, attention! Finally, we aggregate the transformed node information and pass it through a feed-forward neural network to predict who composed the excerpt.
+
+For the remainder of this problem, you need to copy and follow the instructions in this \href{https://colab.research.google.com/drive/13av5NiX-q5k1xP9d-WDOvhGnkfvyiel7?usp=sharing}{Colab}. Also, be sure to download the music dataset from Canvas. Many steps have been completed for you; you will need to complete three vital steps:
+
+\begin{enumerate}
+    \item Implement the Graph Attention (GAT) message passing layer, 
+    \item Train and tune the hyperparameters of your GNN, and
+    \item Analyze the results of your multiclass classification model.
+\end{enumerate}
+
+
+\end{document}
