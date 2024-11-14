@@ -1,3 +1,15 @@
 seaborn
 xgboost == 2.1.1
 torch
+pandas
+numpy
+scikit-learn
+torch
+seaborn
+
+pytest == 8.3.2
+black == 24.8.0 
+
+xgboost
+generalized-additive-models
+scipy
