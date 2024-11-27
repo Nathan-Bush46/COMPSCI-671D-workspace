@@ -8,36 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pip install --no-cache-dir --upgrade pip && \
     apt-get clean
 
-# # Install dependencies for building Python and CUDA
-# RUN apt-get update && \
-#     apt-get install -y --no-install-recommends \
-#     software-properties-common build-essential wget \
-#     zlib1g-dev libssl-dev libncurses5-dev libbz2-dev libreadline-dev \
-#     libsqlite3-dev libffi-dev liblzma-dev && \
-#     rm -rf /var/lib/apt/lists/*
-
 # Install PyTorch and Transformers
 RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 && \
     pip install transformers
-
-# # Download and install Python 3.12 from source
-# RUN wget https://www.python.org/ftp/python/3.12.0/Python-3.12.0.tgz && \
-#     tar -xzf Python-3.12.0.tgz && \
-#     cd Python-3.12.0 && \
-#     ./configure --enable-optimizations && \
-#     make -j$(nproc) && \
-#     make altinstall && \
-#     cd .. && rm -rf Python-3.12.0 Python-3.12.0.tgz
-
-# # Set Python 3.12 as default, removing existing link if present
-# RUN if [ -L /usr/bin/python3 ]; then rm /usr/bin/python3; fi && \
-#     ln -s /usr/local/bin/python3.12 /usr/bin/python3
-
-# # Install pip manually for Python 3.12
-# RUN wget https://bootstrap.pypa.io/get-pip.py && \
-#     python3 get-pip.py && \
-#     rm get-pip.py
-
 
 
 # Set CUDA environment variables
